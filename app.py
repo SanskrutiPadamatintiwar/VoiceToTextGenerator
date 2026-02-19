@@ -390,7 +390,7 @@
 
 import streamlit as st
 import tempfile, os
-from pydub import AudioSegment
+#from pydub import AudioSegment
 import google.generativeai as genai
 from fpdf import FPDF
 import base64
@@ -443,11 +443,21 @@ def save_uploaded_file(uploaded_file):
     f.close()
     return f.name
 
+import subprocess
+
 def extract_audio_to_wav(input_path):
-    audio = AudioSegment.from_file(input_path)
     out = tempfile.NamedTemporaryFile(delete=False, suffix=".wav")
-    audio.export(out.name, format="wav")
-    return out.name
+    output_path = out.name
+    out.close()
+
+    subprocess.run([
+        "ffmpeg",
+        "-y",               # overwrite if exists
+        "-i", input_path,   # input file
+        output_path         # output file
+    ], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
+    return output_path
 
 def call_gemini_transcribe(wav_path, model_name="gemini-2.5-flash"):
     genai.configure(api_key=st.secrets.get("GEMINI_API_KEY", "") or os.getenv("GEMINI_API_KEY", ""))
